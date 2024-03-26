@@ -27,7 +27,7 @@
 $ git clone https://github.com/nilton-medeiros/apiTmsCloud.git
 ```
 
-### Após clonar o repositório, será necessário criar dois banco de dados MySQL/MariaDB juntamenteo com as conlunas necessárias.
+### Após clonar o repositório, será necessário criar dois banco de dados MySQL/MariaDB juntamente com as conlunas necessárias.
 
 ```bash
 #Command to create a database in the MySQL terminal:
@@ -129,4 +129,3 @@ $ npm start
 ### Nilton G. Medeiros
 
 - <a href="https://github.com/nilton-medeiros"> GitHub
-
