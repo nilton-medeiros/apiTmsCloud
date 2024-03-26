@@ -228,7 +228,6 @@ const emitirCTe = async (referencia_uid, fileConnection) => {
         }
     }
 
-    await connection.end();
     return cteError;
 
 };
