@@ -1,3 +1,4 @@
+require('dotenv').config();
 const getAnexosCTe = require('./getAnexosCTe');
 
 const emitirCTe = async (referencia_uid, fileConnection) => {
@@ -145,90 +146,38 @@ const emitirCTe = async (referencia_uid, fileConnection) => {
     query += 'cte_tipo_doc_anexo AS tipo_doc_anexo,';
     query += 'cte_operacional_master AS nOCA,';
     query += 'cte_data_entrega_prevista AS dPrevAereo ';
-    query += 'FROM view_ctes ';
-    query += 'WHERE referencia_uuid = ?';
+    query += 'FROM `view_ctes` ';
+    query += 'WHERE `referencia_uuid` = ? ORDER BY `referencia_uuid` DESC';
 
-    const mysql = require('mysql2/promise');
-    require('dotenv').config();
-    let connection;
-    let cteError;
+    const connection = require(fileConnection);
+    let results, error;
 
-    /*
-      Anteriormente, dependendo do parâmetro fileConnection, eu acessava o arquivo './connectionAP' ou './connectionLW':
-        const connection = require(fileConnection)
-      Coloquei a conexão aqui mesmo abaixo para identificar o problema que só conecta ao primeiro banco 'AP' e no segundo (LW)
-      da erro de acesso negado, sendo que o IP (Host/server) para ambos é o mesmo, a senha é a mesma, mudando apenas o nome do banco.
-      Obs: As tabelas em sua estruturas são idênticas, diferenciando apenas em seu conteúdo, cada banco pertence a empresas diferentes
-    */
-    if (fileConnection === './connectionAP') {
-        // Empresa AP
-        // Testando com endpoit e uid:
-        //     http://localhost:3333/cte/apc_ce627f6feaad11ee8cc69457a55bde60
-        try {
+    try {
 
-            connection = await mysql.createConnection({
-                host: process.env.MYSQL_HOST,           // O mesmo para ambos os DB
-                user: process.env.MYSQL_AP_DB,          // Obs: O nome do banco e o nome do usuário são os mesmos
-                password: process.env.MYSQL_PASSWORD,   // O mesmo para ambos os DB
-                database: process.env.MYSQL_AP_DB       // Obs: O nome do banco e o nome do usuário são os mesmos
-            });
+        [results] = await connection.execute(query, [referencia_uid]);
 
-            const [cte] = await connection.execute(query, [referencia_uid]);
-            const cte_id = cte[0].cte_id || null;
-
-            if (cte_id) {
-                const tipoDocAnexo = cte[0].tipo_doc_anexo;
-                const anexos = await getAnexosCTe(connection, cte_id, tipoDocAnexo);
-                cte[0].anexos = anexos;
-                console.log(cte[0]);
-            }
-
-            // Sucesso! Fecha a conexão e retorna o objeto cte
-            await connection.end();
-            return cte[0];
-
-        } catch (error) {
-            cteError = {status: 'error', message: 'Internal Server Error'};
-            console.log(`Erro ao conectar ao banco de dados ${process.env.MYSQL_AP_DB}:`, error);
+        if (Array.isArray(results) && results.length > 0) {
+            results = results[0];
+            const cte_id = results.cte_id;
+            const tipoDocAnexo = results.tipo_doc_anexo;
+            const anexos = await getAnexosCTe(connection, cte_id, tipoDocAnexo);
+            results.anexos = anexos;
+        }else{
+            error = {status: '404 - Not Found', message: `CTe não encontrado. referencia_uid: ${referencia_uid}`};
         }
-    } else {
-        // Empresa LW
-        // Testando com endpoit e uid:
-        //     http://localhost:3333/cte/lwc_dc452264e55d11eeb3c79457a55bde60
-        try {
 
-            // Tentei conectar com o método createPool(), também dá o mesmo erro de acesso negado.
-            connection = await mysql.createConnection({
-                host: process.env.MYSQL_HOST,            // O mesmo para ambos os DB
-                user: process.env.MYSQL_LW_DB,           // Obs: O nome do banco e o nome do usuário são os mesmos
-                password: process.env.MYSQL_PASSWORD,    // O mesmo para ambos os DB
-                database: process.env.MYSQL_LW_DB        // Obs: O nome do banco e o nome do usuário são os mesmos
-            });
-
-            const [cte] = await connection.execute(query, [referencia_uid]);
-            const cte_id = cte[0].cte_id || null;
-
-            if (cte_id) {
-                const tipoDocAnexo = cte[0].tipo_doc_anexo;
-                const anexos = await getAnexosCTe(connection, cte_id, tipoDocAnexo);
-                cte[0].anexos = anexos;
-                console.log(cte[0]);
-            }
-
-            // Sucesso! Fecha a conexão e retorna o objeto cte
-            await connection.end();
-            return cte[0];
-
-        } catch (error) {
-            // Sempre que acessa o segundo banco (tmscte_lw) cai aqui neste erro:
-            // Error: Access denied for user 'tmscte_lw'@'191.183.114.29' (using password: YES)
-            // Obs: Este IP acima (191.183.114.29) não é o IP do banco que está no arquivo .env, não sei de onde vem este IP
-            cteError = {status: 'error', message: 'Internal Server Error'};
-            console.log(`Erro ao conectar ao banco de dados ${process.env.MYSQL_LW_DB}:`, error);
-        }
+    } catch (err) {
+        error = {status: 'error', message: 'Internal Server Error'};
+        console.log(`Erro ao executar query ao banco de dados ${fileConnection}`, err);
     }
 
-    return cteError;
+    // Se fechar esta conexão, na próxima conexão não reabre, não executa, da erro de conexão fechada até que se desligue o servidor app/server.
+    // await connection.end(); // Sucesso! Fecha a conexão e retorna o objeto cte
+
+    if (error) {
+        return error;
+    }
+    return results;
 
 };
 
