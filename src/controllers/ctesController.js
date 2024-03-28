@@ -16,8 +16,8 @@ const obterCTe = async (request, response) => {
     const cte = await ctesModel.obterCTe(referencia_uid, fileConnection);
 
     if (cte.cte_id) {
-        response.status(200).json({status: 'OK', message: 'CTe em processo, acesse mais tarde cte_eventos para obter os retornos.'});
-        return outraFuncao(cte);
+        response.status(200).json({status: 'OK', message: 'CTe em processo, webhook retornará respostas direto na tabela `ctes_eventos`.'});
+        
     }else{
         return response.status(cte.status === 'error' ? 500 : 404).json(cte);
     }
