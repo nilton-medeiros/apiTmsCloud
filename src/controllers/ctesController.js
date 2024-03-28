@@ -17,7 +17,7 @@ const obterCTe = async (request, response) => {
 
     if (cte.cte_id) {
         response.status(200).json({status: 'OK', message: 'CTe em processo, webhook retornará respostas direto na tabela `ctes_eventos`.'});
-        
+        outraFuncao(cte);
     }else{
         return response.status(cte.status === 'error' ? 500 : 404).json(cte);
     }
