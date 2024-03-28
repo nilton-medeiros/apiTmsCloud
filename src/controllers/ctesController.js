@@ -1,25 +1,28 @@
-const emitirCTe = async (request, response) => {
+const outraFuncao = require('../apiNuvemFiscal/outraFuncao');
+
+const obterCTe = async (request, response) => {
     const { referencia_uid } = request.params;
     const cia = referencia_uid.slice(0, 2);
 
-    const ctesModel = require('../models/ctesModel');
+    const ctesModel = require('../models/ctes/ctesModel');
     let fileConnection;
 
     if (cia === 'ap') {
-        fileConnection = './connectionAP';
+        fileConnection = '../connectionAP';
     }else{
-        fileConnection = './connectionLW';
+        fileConnection = '../connectionLW';
     }
 
-    const cte = await ctesModel.emitirCTe(referencia_uid, fileConnection);
+    const cte = await ctesModel.obterCTe(referencia_uid, fileConnection);
 
     if (cte.cte_id) {
-        return response.status(200).json({status: 'OK', message: 'CTe em processo de emissão'});
+        response.status(200).json({status: 'OK', message: 'CTe em processo, acesse mais tarde cte_eventos para obter os retornos.'});
+        return outraFuncao(cte);
     }else{
         return response.status(cte.status === 'error' ? 500 : 404).json(cte);
     }
 };
 
 module.exports = {
-    emitirCTe,
+    obterCTe,
 };

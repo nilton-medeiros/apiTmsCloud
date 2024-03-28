@@ -1,7 +1,7 @@
 require('dotenv').config();
 const getAnexosCTe = require('./getAnexosCTe');
 
-const emitirCTe = async (referencia_uid, fileConnection) => {
+const obterCTe = async (referencia_uid, fileConnection) => {
     let query = 'SELECT ';
     query += 'cte_id,';
     query += 'emp_id,';
@@ -177,10 +177,11 @@ const emitirCTe = async (referencia_uid, fileConnection) => {
     if (error) {
         return error;
     }
+
     return results;
 
 };
 
 module.exports = {
-    emitirCTe,
+    obterCTe,
 };
