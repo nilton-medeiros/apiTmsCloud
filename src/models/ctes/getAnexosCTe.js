@@ -14,10 +14,14 @@ async function getAnexosCTe(connection, id, tipoDocAnexo) {
 
     const [obsFisco] = await connection.execute(query, [id]);
 
-    for (let i = 0; i < obsFisco.length; i++) {
-        let obs = obsFisco[i];
+    for (const obs of obsFisco) {
         result.obs_fisco.push(obs);
     }
+
+    // for (let i = 0; i < obsFisco.length; i++) {
+    //     let obs = obsFisco[i];
+    //     result.obs_fisco.push(obs);
+    // }
 
     // Pega os Componentes do Calculo
     query = 'SELECT ccc_titulo AS xNome, ';
@@ -30,10 +34,14 @@ async function getAnexosCTe(connection, id, tipoDocAnexo) {
 
     const [calcs] = await connection.execute(query, [id]);
 
-    for (let i = 0; i < calcs.length; i++) {
-        let calc = calcs[i];
+    for (const calc of calcs) {
         result.comp_calc.push(calc);
     }
+
+    // for (let i = 0; i < calcs.length; i++) {
+    //     let calc = calcs[i];
+    //     result.comp_calc.push(calc);
+    // }
 
     // Pega os Documentos nfe, nota antiga ou declarações anexos ao cte
     query = 'SELECT ';
@@ -78,8 +86,7 @@ async function getAnexosCTe(connection, id, tipoDocAnexo) {
 
     const [docs] = await connection.execute(query, [id]);
 
-    for (let i = 0; i < docs.length; i++) {
-        let doc = docs[i];
+    for (const doc of docs) {
         result.docs.push(doc);
     }
 
