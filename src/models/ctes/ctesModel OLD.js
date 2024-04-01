@@ -1,6 +1,6 @@
 require('dotenv').config();
 const getAnexosCTe = require('./getAnexosCTe');
-const getEmailsCTe = require('./getEmailsCTe');
+const getEmailsCTe = require('./getEmailsCTe OLD');
 
 const obterCTe = async (referencia_uid, fileConnection) => {
     let query = 'SELECT ';
