@@ -2,7 +2,7 @@
   "name": "apitmscloud",
   "version": "1.0.0",
   "description": "API de Intregração entre TMS.Cloud e API da Nuvem Fiscal",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/server.js",
@@ -12,6 +12,7 @@
   "author": "Nilton G. Medeiros",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "express": "^4.19.1",
     "mysql2": "^3.9.2"

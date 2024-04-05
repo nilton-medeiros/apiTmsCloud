@@ -12,13 +12,11 @@ function saveLog(info) {
     const mes = String(data.getMonth() + 1).padStart(2, '0');
     const dataFormatada = `${ano}${mes}`;
 
-    // Crie o caminho completo para o arquivo de log na pasta "logs/"
+    // Cria o caminho completo para o arquivo de log na pasta "logs/"
     const logFile = 'log' + dataFormatada + '.json';
     const direLog =  path.join(__dirname, '../../logs/');
 
     const logFilePath = direLog + logFile;
-
-    console.log(logFilePath);
 
     // Lê o arquivo de log (se existir)
     let logs = [];

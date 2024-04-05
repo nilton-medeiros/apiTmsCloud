@@ -24,7 +24,7 @@ async function getRodoModal(connection, cteId) {
 
     const [coletas] = await connection.execute(sql, [cteId]);
 
-    if(Array.isArray(coletas) && coletas.length > 0) {
+    if(coletas.length > 0) {
         for (const coleta of coletas) {
             occ.push({
                 serie: coleta.serie || '',
@@ -54,7 +54,7 @@ async function getAereoModal(connection, cteId) {
 
     const [dim] = await connection.execute(sql, [cteId]);
 
-    if(Array.isArray(dim) && dim.length === 1) {
+    if(dim.length === 1) {
         const cump = dim[0].cumprimento.padStart(4, '0');
         const altu = dim[0].altura.padStart(4, '0');
         const larg = dim[0].largura.padStart(4, '0');

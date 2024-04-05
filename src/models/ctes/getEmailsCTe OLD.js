@@ -17,7 +17,7 @@ async function getEmailsCTe(connection, idsCTe) {
             sql += 'LOCATE(\'.\', con_email_cte, LOCATE(\'@\', con_email_cte)) > 0 ';
             sql += 'LIMIT 1';
             const [contato] = await connection.execute(sql);
-            if (Array.isArray(contato) && contato.length > 0) {
+            if (contato.length > 0) {
                 clie.email = contato[0].email;
             }
         }

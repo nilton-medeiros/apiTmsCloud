@@ -157,7 +157,7 @@ const obterCTe = async (referencia_uid, fileConnection) => {
 
         [results] = await connection.execute(query, [referencia_uid]);
 
-        if (Array.isArray(results) && results.length > 0) {
+        if (results.length > 0) {
             results = results[0];
             const cte_id = results.cte_id;
             const tipoDocAnexo = results.tipo_doc_anexo;

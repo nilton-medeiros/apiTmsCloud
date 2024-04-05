@@ -15,7 +15,7 @@ async function getDocAnterioresCTe(connection, cteId) {
 
     const [emitentes] = await connection.execute(sql, [cteId]);
 
-    if (Array.isArray(emitentes) && emitentes.length > 0) {
+    if (emitentes.length > 0) {
         let EmitDocAnt = {};
 
         for (const emitente of emitentes) {
@@ -43,7 +43,7 @@ async function getDocAnterioresCTe(connection, cteId) {
 
             const [docTransAnts] = await connection.execute(sql, [emitente.eda_id]);
 
-            if (Array.isArray(docTransAnts) && docTransAnts.length > 0) {
+            if (docTransAnts.length > 0) {
                 for (const docTranAnt of docTransAnts) {
                     if (docTranAnt.chCTe) {
                         EmitDocAnt.idDocAnt.push({chCTe: docTranAnt.chCTe});
