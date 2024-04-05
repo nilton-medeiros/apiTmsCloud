@@ -7,6 +7,6 @@ class ApiCTe {
     }
 
     emitir() {
-        console.log(`${this.cte} faz um som.`);
+        console.log(`Em construção... ${this.cte}`);
     }
-  }
+}

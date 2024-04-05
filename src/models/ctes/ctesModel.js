@@ -26,7 +26,7 @@ const obterCTe = async (connection, referencia_uid) => {
     } catch (err) {
         console.log('ERRO SQL:', sql);
         error = {status: 'error', message: 'Internal Server Error'};
-        saveLog('getModels:28 - Erro ao executar query no banco de dados' + err);
+        saveLog('getModels: Erro ao executar query no banco de dados' + err);
     }
 
     // Se fechar esta conexão, na próxima conexão não reabre, da erro de conexão fechada até que se desligue o servidor app/server.
