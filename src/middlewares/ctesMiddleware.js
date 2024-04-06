@@ -7,7 +7,7 @@ const validateFields = (request, response, next) => {
             message: 'O campo referencia_uuid é requerido'
         });
     }
-    if (referencia_uid === '') {
+    if (!(typeof referencia_uid === 'string') || referencia_uid === '') {
         return response.status(400).json({
             satus: 'error',
             message: 'O campo referencia_uuid não pode ser vazio'
