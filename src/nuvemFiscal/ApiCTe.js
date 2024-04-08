@@ -1,4 +1,4 @@
-const axios = require('axios');
+// const axios = require('axios');
 
 class ApiCTe {
     constructor(cte) {
@@ -10,3 +10,5 @@ class ApiCTe {
         console.log(`Em construção... ${this.cte}`);
     }
 }
+
+module.exports = { ApiCTe };

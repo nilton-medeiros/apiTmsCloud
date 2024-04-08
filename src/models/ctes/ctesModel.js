@@ -4,19 +4,20 @@ const obterCTe = async (connection, referencia_uid) => {
     let sql = 'SELECT ';
     let results, error;
 
-    sql += 'cte_id AS id,';
-    sql += 'cte_tipo_doc_anexo AS tipo_doc_anexo,';
-    sql += 'cte_modal AS modal,';
+    sql += 'cte_id AS id, ';
+    sql += 'cte_tipo_doc_anexo AS tipo_doc_anexo, ';
+    sql += 'cte_modal AS modal, ';
     sql += 'FROM ctes ';
-    sql += 'WHERE referencia_uuid = ?';
+    sql += `WHERE referencia_uuid = '${referencia_uid}'`;
+    console.log(sql);
 
     try {
 
-        [results] = await connection.execute(sql, [referencia_uid]);
+        [results] = await connection.execute(sql);
+        saveLog(results);
 
         if (results.length > 0) {
             results = results[0];
-            saveLog(results);
         }else{
             const msg = `CTe não encontrado. referencia_uid: ${referencia_uid}`;
             error = {status: '404 - Not Found', message: msg};

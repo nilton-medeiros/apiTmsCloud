@@ -9,10 +9,7 @@ async function obterToken() {
         host: process.env.MYSQL_HOST,
         user: process.env.MYSQL_SY_DB,
         password: process.env.MYSQL_SY_PW,
-        database: process.env.MYSQL_SY_DB,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
+        database: process.env.MYSQL_SY_DB
     });
 
     const authToken = {
@@ -34,15 +31,12 @@ async function obterToken() {
         if (expireIn > currDate && token) {
             authToken.token = token;
             authToken.authorized = true;
+            saveLog('Obteve o token da Nuvemfiscal via banco de dados');
             return authToken;
         }
 
         const auth = new AuthNuvemFiscal();
         authToken.token = await auth.newToken();
-        // authToken.token é retornado vazio, pois o await auth.newToken() não é respeitado
-        console.log('obterToken: =================================');
-        // O auth aqui não foi atualizado ainda, o await acima não está sendo respeitado
-        console.log(auth);
 
         if (auth.authorized) {
 
@@ -54,6 +48,7 @@ async function obterToken() {
                 authToken.status = auth.status;
                 authToken.token = auth.token;
                 authToken.authorized = true;
+                saveLog('Atualizou o token da Nuvemfiscal no banco de dados');
             } catch (err) {
                 authToken.status = 400;
                 authToken.error = err;
@@ -63,6 +58,11 @@ async function obterToken() {
         } else {
             authToken.status = auth.status;
             authToken.error = auth.error;
+            saveLog({
+                status: auth.status,
+                error: auth.error,
+                message: 'Token da Nuvemfiscal não foi autorizado',
+            });
         }
 
     } catch (err) {
