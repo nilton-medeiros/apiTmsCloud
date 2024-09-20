@@ -1,46 +1,90 @@
-const saveLog = require('../../utils/saveLog');
+const saveLog = require('../../shared/saveLog');
+const mysql = require('mysql2/promise');
 
-const obterCTe = async (connection, referencia_uid) => {
-    let sql = 'SELECT ';
-    let results, error;
+require('dotenv').config();
 
-    sql += 'cte_id AS id, ';
-    sql += 'cte_tipo_doc_anexo AS tipo_doc_anexo, ';
-    sql += 'cte_modal AS modal, ';
-    sql += 'FROM ctes ';
-    sql += `WHERE referencia_uuid = '${referencia_uid}'`;
-    console.log(sql);
+async function dbGetCTe(referencia_uid) {
+  const error = { statusError: 0, msg: '' };
+  const cia = referencia_uid.slice(0, 2);
 
-    try {
+  // Database connection
+  const dbHost = process.env.MYSQL_HOST;
+  const dbPassword = process.env.MYSQL_DB_PW;
+  let dbUser, dbName;
 
-        [results] = await connection.execute(sql);
-        saveLog(results);
+  if (cia === 'ap') {
+    dbUser = process.env.MYSQL_AP_DB;
+  } else if (cia === 'lw') {
+    dbUser = process.env.MYSQL_LW_DB;
+  }
 
-        if (results.length > 0) {
-            results = results[0];
-        }else{
-            const msg = `CTe não encontrado. referencia_uid: ${referencia_uid}`;
-            error = {status: '404 - Not Found', message: msg};
-            saveLog(msg);
-        }
+  dbName = dbUser;
 
-    } catch (err) {
-        console.log('ERRO SQL:', sql);
-        error = {status: 'error', message: 'Internal Server Error'};
-        saveLog('getModels: Erro ao executar query no banco de dados' + err);
+  if (dbUser === undefined) {
+    saveLog({
+      level: 'cteModel.js - LOG1',
+      message: 'Variável "dbUser" é "undefined" porque a var "cia" não é "ap" e nem "lw"',
+    });
+
+    error.statusError = 500;
+    error.msg = 'Internal Server Error';
+
+    return error;
+  }
+
+  const pool = mysql.createPool({
+    host: dbHost,
+    user: dbUser,
+    password: dbPassword,
+    database: dbName,
+    decimalNumbers: true,
+  });
+
+  const connection = await pool.getConnection();
+
+  try {
+    // Consulta um CTe por referencia_uid. Pela referencia se obtem qual é o agente/db (LW ou AP)
+    const sql = `
+      SELECT
+        cte_id AS id,
+        cte_tipo_doc_anexo AS tipo_doc_anexo,
+        cte_modal AS tpModal
+      FROM ctes
+      WHERE referencia_uuid = '${referencia_uid}'
+    `;
+
+    const [rows] = await connection.query(sql);
+
+    // console.log('sql:', sql);
+
+    if (rows.length > 0) {
+      // Retorna o primeiro registro (CTe) encontrado
+      const row = rows[0];
+      row.pool = pool;
+
+      return row;
+    } else {
+      const msg = `CTe não encontrado. referencia_uid: ${referencia_uid}`;
+      error.statusError = 400;
+      error.msg = msg;
+
+      saveLog({ level: 'cteModel.js - LOG2', message: msg });
     }
+  } catch (err) {
+    // console.log(err);
 
-    // Se fechar esta conexão, na próxima conexão não reabre, da erro de conexão fechada até que se desligue o servidor app/server.
-    // await connection.end(); // Sucesso! Fecha a conexão e retorna o objeto cte
+    error.statusError = 500;
+    error.msg = 'Internal Server Error';
 
-    if (error) {
-        return error;
-    }
+    saveLog({
+      level: 'cteModel.js - LOG3',
+      message: 'Erro ao executar query no banco de dados: ' + err,
+    });
+  } finally {
+    connection.release();
+  }
 
-    return results;
+  return error;
+}
 
-};
-
-module.exports = {
-    obterCTe,
-};
+module.exports = dbGetCTe;

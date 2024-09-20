@@ -1,52 +1,60 @@
-const {obterToken} = require('../models/key_value/obterToken');
+const { obterToken } = require('../models/key_value/obterToken');
 
 require('dotenv').config();
 
-const verifyApiToken = (request, response, next) => {
-    const headersAuth = request.headers.authorization;
+const verifyApiToken = async (request, response, next) => {
+  const authHeader = request.headers.authorization;
 
-    if (!headersAuth) {
-        return response.status(400).json({
+  if (!authHeader) {
+    // status: 401 - Invalid credentials
+    return response.status(401).json({ msg: 'No token provider' });
+  }
+
+  const parts = authHeader.split(' ');
+
+  if (!parts.length === 2) {
+    return response.status(401).json({ msg: 'Token error!' });
+  }
+
+  const [scheme, token] = parts;
+
+  if (!/^Bearer$/i.test(scheme)) {
+    return response.status(401).send({ msg: 'Token malFormatted' });
+  }
+
+  /*
+    Substituir posteriormente pelo jwt:
+    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) return response.status(401).send({
             status: 'error',
-            message: 'Bad Request: Authorization Bearer token não enviado no headers'
+            message: 'Token invalid'
         });
-    }
 
-    const token = headersAuth.split(' ')[1];
+        Sinaliza para outro middlewares que este usuário já está logado
+        request.userId = decoded.id;
+    });
+     */
 
-    if (!token) {
-        return response.status(400).json({
-            status: 'error',
-            message: 'Bad Request: Cade o Token?'
-        });
-    }
+  if (!(token === process.env.ACCESS_TOKEN)) {
+    return response.status(401).json({ msg: 'Token invalid' });
+  }
 
-    if (!(token === process.env.ACCESS_TOKEN)) {
-        return response.status(401).json({
-            status: 'error',
-            message: 'Unauthorized - API Token inválido'
-        });
-    }
-
-    next();
+  next();
 };
 
 const getAuthNuvemfiscal = async (request, response, next) => {
-    const auth = await obterToken();
+  const auth = await obterToken();
 
-    if (!(auth.authorized)) {
-        return response.status(auth.status).json({
-            satus: 'error',
-            message: auth.error,
-        });
-    }
+  if (!auth.authorized) {
+    return response.status(auth.status).json({ msg: auth.error });
+  }
 
-    request.authToken = auth.token;
+  request.authToken = auth.token;
 
-    next();
+  next();
 };
 
 module.exports = {
-    getAuthNuvemfiscal,
-    verifyApiToken,
+  getAuthNuvemfiscal,
+  verifyApiToken,
 };

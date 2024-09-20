@@ -1,39 +1,57 @@
-const saveLog = require('../utils/saveLog');
+const { ApiCTe } = require('../nuvemFiscal/ApiCTe');
 
-async function cteSubmit(cteAnexos) {
-    const id = cteAnexos.id;
-    const connection = cteAnexos.connection;
+const saveLog = require('../shared/saveLog');
 
-    let results, error;
-    let sql = 'SELECT * FROM view_ctes_sefaz WHERE cte_id = ?';
+async function cteSubmit(anexosCTe) {
+  const id = anexosCTe.id;
+  const pool = anexosCTe.pool;
 
-    try {
+  let row;
+  msgLog = null;
+  let sql = `SELECT * FROM view_ctes_sefaz WHERE cte_id = ${id}`;
 
-        [results] = await connection.execute(sql, [id]);
+  const connection = await pool.getConnection();
 
-        if (results.length > 0) {
-            results = results[0];
-            saveLog(results);
-        }else{
-            const msg = `CTe não encontrado. id: ${id}`;
-            error = {status: '404 - Not Found', message: msg};
-            saveLog(msg);
-        }
+  try {
+    // console.log('');
+    // console.log(`Obtendo Informações da "view_ctes_sefaz" sobre o cte_id = ${id}...`);
+    // console.log(sql);
+    // console.log('');
+    const [rows] = await connection.query(sql);
 
-    } catch (err) {
-        console.log('ERRO SQL:', sql);
-        error = {status: 'error', message: 'Internal Server Error'};
-        saveLog('getModels:26 - Erro ao executar query no banco de dados' + err);
+    if (rows && rows.length > 0) {
+      row = rows[0];
+    } else {
+      msgLog = `CTe id ${id} não encontrado.`;
     }
+  } catch (err) {
+    // console.log('ERRO SQL:', sql);
+    msgLog = 'Error SQL: ' + sql;
 
-    if (error) {
-        return error;
-    }
+    // console.log('error:', err);
+  }
 
-    const apiCTe = new ApiCTe(cte);
+  if (msgLog) {
+    saveLog({
+      level: 'cteSubmit.js - LOG1',
+      message: msgLog,
+    });
+  }
 
-    return results;
+  saveLog({ level: 'cteSubmit.js - LOG2', message: 'Análise cte row', meta: row });
 
+  const cte = {
+    ...row,
+    anexos: anexosCTe.anexos,
+    authToken: anexosCTe.authToken,
+    pool: pool,
+    modal: anexosCTe.modal,
+  };
+
+  // Falta terminiar a classe ApiCTe
+  const apicte = new ApiCTe(cte);
+
+  connection.release();
 }
 
 module.exports = cteSubmit;

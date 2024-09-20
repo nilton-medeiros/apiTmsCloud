@@ -1,67 +1,56 @@
-const ctesModel = require('../models/ctes/ctesModel');
+const dbGetCTe = require('../models/ctes/ctesModel');
 const getDocAnterioresCTe = require('../models/ctes/getDocAnterioresCTe');
 const getAnexosCTe = require('../models/ctes/getAnexosCTe');
 const getModal = require('../models/ctes/getModal');
 const cteSubmit = require('./cteSubmit');
 
 const obterCTe = async (request, response) => {
-    const { referencia_uid } = request.params;
-    const cia = referencia_uid.slice(0, 2);
-    let fileConnection = '../connections/connectionAP.js';
+  const { referencia_uid } = request.params;
 
-    if (cia === 'lw') {
-        fileConnection = '../connections/connectionLW.js';
-    }
+  // Obtem informações relevantes por referência do cte
+  const cte = await dbGetCTe(referencia_uid);
 
-    const connection = require(fileConnection);
-    const cte = await ctesModel.obterCTe(connection, referencia_uid);
+  if ('statusError' in cte) {
+    return response.status(cte.statusError).json({ msg: cte.msg });
+  }
 
-    const anexarAoCTe = {
-        id: 0,
-        anexos: {},
-        docAnt: {},
-        connection: connection
-    };
+  const anexosCTe = {
+    id: 0,
+    anexos: {},
+    docAnt: {},
+    pool: cte.pool,
+    authToken: request.authToken,
+  };
 
-    if (cte.id) {
+  // Libera o cliente da solicitação e segue processamento que fará o Webhook no db do cliente no final
+  // status 202 - Aceito
+  response.status(202).json({ cte_id: cte.id, referencia: referencia_uid, msg: 'Em processamento... Retorno pelo webhook!' });
 
-        // Libera o cliente da solicitação e segue processamento que fará o Webhook no db do cliente no final
-        response.status(200).json({status: 'OK', message: `CTe id: ${cte.id} em processo. Cia: ${cia.toUpperCase()}. As respostas serão retornadas pelo Webhook na tabela ctes_eventos.`});
+  anexosCTe.id = cte.id;
 
-        anexarAoCTe.id = cte.id;
+  // Adiciona os anexos do CTe se houver
+  const anexos = await getAnexosCTe(cte.pool, cte.id, cte.tipo_doc_anexo);
+  anexosCTe.anexos = anexos;
 
-        // Adiciona os anexos do CTe se houver
-        const anexos = await getAnexosCTe(connection, cte.id, cte.tipo_doc_anexo);
-        anexarAoCTe.anexos = anexos;
+  // Adiciona Documentos dos Emitentes de Documentos anteriores
+  const emiDocAnt = await getDocAnterioresCTe(cte.pool, cte.id);
 
-        // Adiciona Documentos dos Emitentes de Documentos anteriores
-        const emiDocAnt = await getDocAnterioresCTe(connection, cte.id);
-        anexarAoCTe.docAnt.emiDocAnt = emiDocAnt;
+  if (emiDocAnt.length > 0) {
+    anexosCTe.docAnt = emiDocAnt;
+  }
 
-        // Adiciona a modalidade Rodoviário ou Aéreo
-        const modal = await getModal(connection, cte.id, cte.modal);
 
-        // Cria objeto rodo ou aereo com o modal retornado conforme o tipo do Modal
-        if (cte.modal === 1) {
-            anexarAoCTe.rodo = modal;
-        } else {
-            anexarAoCTe.aereo = modal;
-        }
+  // Cria objeto rodo ou aereo com o modal retornado conforme o tipo do Modal
+  anexosCTe.modal = getModal(cte.pool, cte.id, cte.tpModal);
 
-        
-
-    }else{
-        return response.status(cte.status === 'error' ? 500 : 404).json(cte);
-    }
-
-    cteSubmit(anexarAoCTe);
-
+  await cteSubmit(anexosCTe);
 };
 
 /*
     No Controller, a exportação exige um callback function
-    e não um objeto diretamente (module.exprots = obterCTe;) <- Isto da erro!
+    e não um objeto diretamente "module.exprots = obterCTe;" <- Isto da erro!
 */
+
 module.exports = {
-    obterCTe,
+  obterCTe,
 };
